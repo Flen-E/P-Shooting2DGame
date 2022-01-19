@@ -2,11 +2,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 
 public class GameManager : MonoBehaviour
 {
-    public GameObject[] enemyObjs;
+    public string[] enemyObjs;
     public Transform[] spawnPoints;
 
     public float maxSpawnDelay;
@@ -15,7 +16,15 @@ public class GameManager : MonoBehaviour
     public GameObject player;
     public Text scoreText;
     public Image[] lifeImage;
+    public Image[] boomImage;
     public GameObject gameOverSet;
+
+    public ObjectManager objectManager;
+
+    private void Awake()
+    {
+        enemyObjs = new string[] { "EnemyS", "EnemyM", "EnemyL" };
+    }
 
 
     void Update()
@@ -38,14 +47,16 @@ public class GameManager : MonoBehaviour
     {
         int ranEnemy = Random.Range(0, 3);
         int ranPoint = Random.Range(0, 9);
-        GameObject enemy = 
-            Instantiate(enemyObjs[ranEnemy], spawnPoints[ranPoint].position, spawnPoints[ranPoint].rotation);
+        GameObject enemy = objectManager.MakeObj(enemyObjs[ranEnemy]);
+        enemy.transform.position = spawnPoints[ranPoint].position;
+
 
         Rigidbody2D rigid = enemy.GetComponent<Rigidbody2D>();
         Enemy enemyLogic = enemy.GetComponent<Enemy>();
         enemyLogic.player = this.player;
+        enemyLogic.objectManager = objectManager;
 
-        if(ranPoint == 5 || ranPoint == 6)
+        if (ranPoint == 5 || ranPoint == 6)
         {
             enemy.transform.Rotate(Vector3.back * 60);
             rigid.velocity = new Vector2(enemyLogic.speed * (-1), -1);
@@ -77,6 +88,22 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void UpdateBoomIcon(int boom)
+    {
+
+        //UI Life Init Disable
+        for (int index = 0; index < 3; index++)
+        {
+            boomImage[index].color = new Color(1, 1, 1, 0);
+        }
+
+        //UI Life Active
+        for (int index = 0; index < boom; index++)
+        {
+            boomImage[index].color = new Color(1, 1, 1, 1);
+        }
+    }
+
     public void RespawnPlayer()
     {
         Invoke("RespawnPlayerExe", 2f);
@@ -87,5 +114,18 @@ public class GameManager : MonoBehaviour
     {
         player.transform.position = Vector3.down * 3.5f;
         player.SetActive(true);
+
+        Player playerLogic = player.GetComponent<Player>();
+        playerLogic.isHit = false;
+    }
+
+    public void GameOver()
+    {
+        gameOverSet.SetActive(true);
+    }
+
+    public void GameRetry()
+    {
+        SceneManager.LoadScene(0);
     }
 }
